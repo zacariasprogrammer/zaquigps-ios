@@ -20,7 +20,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate, CPS
         let searchButton = CPBarButton(title: "Search") { [weak self] _ in
             let searchTemplate = CPSearchTemplate()
             searchTemplate.delegate = self
-            self?.interfaceController?.pushTemplate(searchTemplate, animated: true, scanForHighlightableItems: nil)
+            self?.interfaceController?.pushTemplate(searchTemplate, animated: true, completion: nil)
         }
 
         mapTemplate.leadingNavigationBarButtons = [searchButton]
@@ -48,13 +48,11 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate, CPS
             routeChoices: []
         )
 
-        // Fixed parameter: using textConfiguration instead of selectedTripPreview
         mapTemplate?.showTripPreviews([routeChoice], textConfiguration: nil)
     }
 
     // MARK: - CPSearchTemplateDelegate
 
-    // Fixed delegate signature: updatedSearchText parameter
     func searchTemplate(
         _ searchTemplate: CPSearchTemplate,
         updatedSearchText searchText: String,
