@@ -1,28 +1,22 @@
 import SwiftUI
-import CarPlay
 
 @main
 struct ZaquiGPSApp: App {
-    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if #available(iOS 17.0, *) {
+                ContentView()
+            } else {
+                VStack(spacing: 12) {
+                    Image(systemName: "iphone.slash")
+                        .font(.largeTitle)
+                    Text("iOS 17.0+ Required")
+                        .font(.headline)
+                    Text("ZaquiGPS requires iOS 17.0 or newer to run.")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            }
         }
-    }
-}
-
-class AppDelegate: NSObject, UIApplicationDelegate {
-    func application(
-        _ application: UIApplication,
-        configurationForConnecting connectingSceneSession: UISceneSession,
-        options: UIScene.ConnectionOptions
-    ) -> UISceneConfiguration {
-        if connectingSceneSession.role == .carTemplateApplication {
-            let config = UISceneConfiguration(name: "CarPlay", sessionRole: connectingSceneSession.role)
-            config.delegateClass = CarPlaySceneDelegate.self
-            return config
-        }
-        return UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
     }
 }
