@@ -35,7 +35,6 @@ struct ContentView: View {
 
     private func updateCamera() {
         guard let userCoord = locationManager.location?.coordinate else { return }
-        // Correct parameter order: heading before pitch
         cameraPosition = .camera(
             MapCamera(
                 centerCoordinate: userCoord,
