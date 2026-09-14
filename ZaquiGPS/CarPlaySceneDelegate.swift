@@ -1,44 +1,40 @@
-import UIKit
 import CarPlay
+import UIKit
 import MapKit
 
-final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
+class CarPlaySceneDelegate: NSObject, CPTemplateApplicationSceneDelegate {
     var interfaceController: CPInterfaceController?
     var mapTemplate: CPMapTemplate?
-
+    
     func templateApplicationScene(
         _ templateApplicationScene: CPTemplateApplicationScene,
         didConnect interfaceController: CPInterfaceController
     ) {
         self.interfaceController = interfaceController
-
-        let mapTemplate = CPMapTemplate()
-        self.mapTemplate = mapTemplate
-
-        let searchButton = CPBarButton(type: .image) { [weak self] _ in
-            self?.presentSearchTemplate()
+        
+        let map = CPMapTemplate()
+        self.mapTemplate = map
+        
+        let searchBtn = CPBarButton(title: "Search") { [weak self] _ in
+            self?.showCarPlaySearch()
         }
-        searchButton.image = UIImage(systemName: "magnifyingglass")
-        mapTemplate.leadingNavigationBarButtons = [searchButton]
-
-        let centerButton = CPMapButton { [weak self] _ in
-            self?.mapTemplate?.dismissPanningInterface(animated: true)
+        let recenterBtn = CPBarButton(title: "Target") { [weak self] _ in
+            self?.mapTemplate?.showTripPreviews([], selectedTripPreview: nil)
         }
-        centerButton.image = UIImage(systemName: "location.fill")
-        mapTemplate.mapButtons = [centerButton]
-
-        interfaceController.setRootTemplate(mapTemplate, animated: true, completion: nil)
+        
+        map.trailingNavigationBarButtons = [searchBtn, recenterBtn]
+        interfaceController.setRootTemplate(map, animated: true, completion: nil)
     }
-
+    
     func templateApplicationScene(
         _ templateApplicationScene: CPTemplateApplicationScene,
-        didDisconnectInterfaceController interfaceController: CPInterfaceController
+        didDisconnect interfaceController: CPInterfaceController
     ) {
         self.interfaceController = nil
         self.mapTemplate = nil
     }
-
-    private func presentSearchTemplate() {
+    
+    private func showCarPlaySearch() {
         let searchTemplate = CPSearchTemplate()
         searchTemplate.delegate = self
         interfaceController?.pushTemplate(searchTemplate, animated: true, completion: nil)
@@ -46,30 +42,46 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 }
 
 extension CarPlaySceneDelegate: CPSearchTemplateDelegate {
-    func searchTemplate(_ searchTemplate: CPSearchTemplate, updatedSearchText searchText: String, completionHandler: @escaping ([CPListItem]) -> Void) {
+    func searchTemplate(_ searchTemplate: CPSearchTemplate, searchTextUpdated searchText: String, completionHandler: @escaping ([CPListItem]) -> Void) {
+        guard !searchText.isEmpty else {
+            completionHandler([])
+            return
+        }
+        
         let request = MKLocalSearch.Request()
         request.naturalLanguageQuery = searchText
-
         let search = MKLocalSearch(request: request)
+        
         search.start { response, _ in
-            guard let mapItems = response?.mapItems else {
+            guard let items = response?.mapItems else {
                 completionHandler([])
                 return
             }
-
-            let items = mapItems.map { item -> CPListItem in
-                let listItem = CPListItem(text: item.name, detailText: item.placemark.title)
+            
+            let listItems = items.prefix(5).map { item -> CPListItem in
+                let listItem = CPListItem(text: item.name ?? "Destination", detailText: item.placemark.title ?? "")
                 listItem.handler = { [weak self] _, completion in
-                    self?.interfaceController?.popTemplate(animated: true, completion: nil)
+                    self?.startCarPlayNavigation(to: item)
                     completion()
                 }
                 return listItem
             }
-            completionHandler(items)
+            completionHandler(listItems)
         }
     }
-
-    func searchTemplateSearchButtonPressed(_ searchTemplate: CPSearchTemplate) {
+    
+    func searchTemplate(_ searchTemplate: CPSearchTemplate, selectedResult item: CPListItem, completionHandler: @escaping () -> Void) {
+        completionHandler()
+    }
+    
+    private func startCarPlayNavigation(to item: MKMapItem) {
         interfaceController?.popTemplate(animated: true, completion: nil)
+        
+        let placemark = MKPlacemark(coordinate: item.placemark.coordinate)
+        let mapItem = MKMapItem(placemark: placemark)
+        mapItem.name = item.name
+        
+        let routeChoice = CPTrip(origin: MKMapItem.forCurrentLocation(), destination: mapItem, routeChoices: [])
+        mapTemplate?.showTripPreviews([routeChoice], selectedTripPreview: routeChoice)
     }
 }
