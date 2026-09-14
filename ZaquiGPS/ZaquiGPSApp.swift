@@ -3,8 +3,8 @@ import CarPlay
 
 @main
 struct ZaquiGPSApp: App {
-    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -12,32 +12,17 @@ struct ZaquiGPSApp: App {
     }
 }
 
-final class AppDelegate: NSObject, UIApplicationDelegate {
-    func application(
-        _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
-    ) -> Bool {
-        return true
-    }
-
+class AppDelegate: NSObject, UIApplicationDelegate {
     func application(
         _ application: UIApplication,
         configurationForConnecting connectingSceneSession: UISceneSession,
         options: UIScene.ConnectionOptions
     ) -> UISceneConfiguration {
-        if connectingSceneSession.role == UISceneSession.Role(rawValue: "CPTemplateApplicationSceneSessionRoleApplication") {
-            let sceneConfig = UISceneConfiguration(
-                name: "CarPlay",
-                sessionRole: connectingSceneSession.role
-            )
-            sceneConfig.delegateClass = CarPlaySceneDelegate.self
-            return sceneConfig
+        if connectingSceneSession.role == .carTemplateApplication {
+            let config = UISceneConfiguration(name: "CarPlay", sessionRole: connectingSceneSession.role)
+            config.delegateClass = CarPlaySceneDelegate.self
+            return config
         }
-
-        let defaultConfig = UISceneConfiguration(
-            name: "Default Configuration",
-            sessionRole: connectingSceneSession.role
-        )
-        return defaultConfig
+        return UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
     }
 }
